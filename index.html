@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你更倾向哪种主义｜六大主义测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+        *{
+            font-family: "Noto Serif SC", KaiTi, STKaiti, serif;
+            font-weight:bold;
+        }
+        :root{
+            --m1:#D6E4F0;
+            --m2:#F8D7DA;
+            --m3:#FFF3CD;
+            --m4:#D4EDDA;
+            --m5:#E2D9F3;
+            --m6:#F0D8E8;
+            --bg-page:#FAF7F0;
+        }
+        body{
+            background-color: var(--bg-page);
+        }
+        .option-item{
+            border-radius:16px;
+            padding:1rem;
+            border:none;
+            cursor:pointer;
+            transition: all 0.2s;
+        }
+        .option-item:nth-child(1){background-color:var(--m1);}
+        .option-item:nth-child(2){background-color:var(--m2);}
+        .option-item:nth-child(3){background-color:var(--m3);}
+        .option-item:nth-child(4){background-color:var(--m4);}
+        .option-item:hover{
+            transform: translateY(-2px);
+        }
+        .option-item.selected{
+            border:3px solid #6c5ce7;
+        }
+        /* 小标题样式，和条形图圆角样式统一，马卡龙底色，字号比正文大一号 */
+        .title-box{
+            display:inline-block;
+            padding:0.3rem 0.8rem;
+            border-radius:9999px;
+            font-size:1.1rem;
+            margin:0.5rem 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-xl mx-auto px-4 py-8">
+        <!-- 首页 -->
+        <div id="page-home">
+            <div class="bg-gradient-to-br from-[#81A1C1] to-[#B48EAD] text-white rounded-2xl p-8 text-center shadow-lg">
+                <h1 class="text-[clamp(1.8rem,6vw,2.4rem)] mb-4">你更倾向哪种主义</h1>
+                <p class="text-lg opacity-90">六大主义人格内核测试 (≧∇≦)</p>
+            </div>
+            <div class="mt-6 bg-white rounded-xl p-6 shadow">
+                <p class="mb-4 text-gray-700">本测试分为两个阶段 (๑•̀ㅂ•́)و✧</p>
+                <p class="mb-2">✅ 第一阶段：10道题，初步筛选你的两大候选倾向</p>
+                <p class="mb-4">✅ 第二阶段：20道题，精细化区分两大主义，计算完整倾向占比</p>
+                <p class="text-sm text-gray-500 mb-6">趣味哲学人格测试，仅供参考 ✧˖°</p>
+                <button onclick="startTest()" class="w-full py-3 bg-[#81A1C1] text-white rounded-xl text-lg">开始测试</button>
+            </div>
+        </div>
+
+        <!-- 答题页 -->
+        <div id="page-question" class="hidden">
+            <div class="bg-white rounded-xl p-6 shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="stage-label" class="text-[#81A1C1]">第一阶段 (๑>ᴗ<๑)</span>
+                    <span id="q-index">第1题 / 共30题</span>
+                </div>
+                <h2 id="question-text" class="text-xl my-6"></h2>
+                <!-- 田字四格选项 -->
+                <div class="grid grid-cols-2 gap-3" id="option-wrap">
+                    <div class="option-item" data-val="0" onclick="selectOption(0)"></div>
+                    <div class="option-item" data-val="1" onclick="selectOption(1)"></div>
+                    <div class="option-item" data-val="2" onclick="selectOption(2)"></div>
+                    <div class="option-item" data-val="3" onclick="selectOption(3)"></div>
+                </div>
+                <div class="mt-6">
+                    <button id="prev-btn" onclick="prevQuestion()" class="hidden py-2 px-5 bg-gray-200 rounded-xl w-full">上一题</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果页 -->
+        <div id="page-result" class="hidden">
+            <div class="bg-[#FAF7F0] rounded-xl p-6 shadow">
+                <h2 class="text-center text-2xl text-[#81A1C1] mb-6">你的内核人格倾向报告 ✧˖°</h2>
+                <p class="text-center text-gray-600 mb-4">核心特质排行（TOP3）(๑˃̵ᴗ˂̵)و</p>
+                <div id="bar-container" class="mb-8">
+                </div>
+                <div id="summary-text" class="mb-8"></div>
+                <hr class="my-8">
+                <div id="result-content"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// 六大主义定义顺序：享乐主义、悲观主义、虚无主义、荒诞主义、存在主义、理想主义
+const names = ["享乐主义","悲观主义","虚无主义","荒诞主义","存在主义","理想主义"];
+const barColors = ["#D6E4F0","#F8D7DA","#FFF3CD","#D4EDDA","#E2D9F3","#F0D8E8"];
+const descAll = {
+"享乐主义":`
+人格解析
+对你来说，当下的感受很重要。人生不必执着宏大遥远的目标，照顾自身情绪、感受，及时感受快乐是重要准则。不喜欢无意义的自我消耗，优先让自己过得舒服。你拒绝无休止内耗、拒绝自我折磨，擅长取悦自己，把松弛与愉悦当成生活第一要义。
+
+专属生活提升指南
+享受当下不等于放纵透支。在取悦自己的同时，保留一点长远底线，不要只顾眼前快乐而埋下未来的麻烦。学会区分短暂快感和长久安稳的愉悦，好好善待自己，但别逃避必要的责任。
+`,
+"悲观主义":`
+人格解析
+你清楚痛苦、遗憾、无常是人生常态，习惯性降低期待、预判最坏结果，以此保护自己。不是单纯消极丧，而是提前做好心理准备，不容易被突发挫折击垮。你清醒现实，很少抱有不切实际的幻想，抗压能力很强。
+
+专属生活提升指南
+预判风险是你的优势，但不要总把注意力全部放在坏结果上。可以提前预想困难，同时看见事情向好的可能性。不要提前沉浸在还没发生的痛苦里，事情没有发生前，一切都存在变数。
+`,
+"虚无主义":`
+人格解析
+你看透世俗定义的成功、荣誉、追逐皆无永恒意义，不被社会标准绑架，质疑一切功利价值。你容易通透、容易放空，偶尔淡漠松弛，不爱争抢内卷，自带疏离感。你会思考，长远来看，很多大家拼命追逐的东西没有先天固定意义。
+
+专属生活提升指南
+万物本无意义，那你便可以自由赋予自己人生意义。不必陷入长久的空洞感。意义不需要宏大，可以很小：一顿好吃的饭、喜欢的故事、一次散步。既然没有硬性要求，你完全可以挑选自己喜欢的小事，当作自己生活的支点。
+`,
+"荒诞主义":`
+人格解析
+你看清生活无逻辑、人生多矛盾、世事无完美，明知世界荒诞无解，却依然选择认真体验、好好生活。不执着事事有答案、努力有回报，接受人生大量无解的遗憾。不较真、不内耗，看透不看破，清醒且愿意继续体验世间一切。
+
+专属生活提升指南
+允许生活不合理、允许结局不完美、允许自己无能为力。不必和荒诞的世界较劲，体验大于意义，活着本身就是最大的答案。接纳生活的矛盾，不必强行寻找万事万物的终极解释。
+`,
+"理想主义":`
+人格解析
+你心里守住一套属于自己的价值标尺，相信真诚、美好有它本身的力量。就算见过现实的残酷，也不愿意轻易随波逐流、圆滑妥协。做选择的时候，比起单纯利弊得失，你更在意这件事是否符合内心的信念，赤诚而温柔。
+
+专属生活提升指南
+保护好内心的热忱，但不要把理想当成唯一标尺。分清理想和现实的边界，不用因为现实不完美就崩溃。允许自己的期待适当降低，保留初心的同时，给自己留容错空间，不必因为一次失望就否定全部美好。
+`,
+"存在主义":`
+人格解析
+你相信人生没有与生俱来的定义，没有宿命注定，所有人生价值、自我人设，都是靠自己一次次选择塑造出来的。不信命运、不爱摆烂，低谷时也相信自己可以改写人生。意义不是等待被发现，而是行动和选择亲手创造。
+
+专属生活提升指南
+不用纠结我本该是什么样，你的人生由你的选择书写。不用被社会既定的时间表绑架，不必一定要按照别人规划的路线生活。迷茫的时候，不用寻找标准答案，去做一个小小的选择，慢慢塑造自己。
+`
+};
+
+// ========= 粗测 10题 =========
+const questions = [
+    {
+        q:"你投入很久的一件事最后彻底失败，你的第一想法？",
+        opts:[
+            "辛苦这么久，先好好犒劳自己，别为难自己",
+            "本来很多努力就不会有回报，早有心理准备",
+            "这件事长远来看本来就没有什么重大意义",
+            "人生本来就充满这种无解的事，接受它继续生活"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"大家都在拼命内卷、规划人生赛道，你怎么看待？",
+        opts:[
+            "没必要跟着硬卷，舒服开心最重要",
+            "就算拼命卷，也很难获得长久圆满",
+            "这套“必须成功”的标准，本身是人为编造的",
+            "明明很多追逐没有尽头，但大家依旧乐此不疲，很荒诞"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"深夜独处，偶尔思考生命这件事，你更容易想到？",
+        opts:[
+            "人生最重要的就是感受美好，享受当下",
+            "离别、痛苦是生命躲不开的一部分",
+            "生命本身不存在与生俱来的意义",
+            "一边知道终会消散，一边还认真活着，本身就充满矛盾"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"遇到一个很不公平的事，你会？",
+        opts:[
+            "尽量远离，不要让这件事消耗我的情绪",
+            "世间本来就很难做到绝对公平",
+            "公平只是人类定义出来的概念，不是世界自带的规则",
+            "世界常有不公，但我依然选择继续过日子"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"对于未来的规划，你更倾向？",
+        opts:[
+            "不用想太远，保证当下过得舒心就好",
+            "提前预想最坏情况，降低期待避免失望",
+            "长远看所有规划最后都会归于无",
+            "就算计划随时会落空，也可以继续体验生活"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"朋友和你讨论“人活着到底图什么”，你的看法？",
+        opts:[
+            "活着就是为了体验开心、舒适的感受",
+            "人生痛苦多于快乐，不要抱有过高幻想",
+            "不存在唯一、固定的人生目标",
+            "这个问题没有标准答案，但我们依然继续生活"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"当你被人辜负、真心被消耗，你会？",
+        opts:[
+            "及时止损，优先照顾自己情绪，减少内耗",
+            "人心本就多变，被辜负是有可能发生的事",
+            "真诚与否，本身也没有绝对永恒的价值",
+            "认清这种无奈，但不会彻底放弃体验人际"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"你看待“快乐”，更接近？",
+        opts:[
+            "快乐本身就是生活最重要的追求",
+            "快乐短暂，苦难才是常态",
+            "快乐只是短暂情绪，没有永恒价值",
+            "明明一切终将消散，但短暂快乐依然值得感受"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"如果努力之后依旧改变不了现状，你会？",
+        opts:[
+            "放下执念，找办法让自己轻松一点",
+            "很多事情本就不是人力能够逆转",
+            "这件事的成败，本就没有终极重要性",
+            "接受无力感，继续去过剩下的生活"
+        ],
+        score:[0,1,2,3]
+    },
+    {
+        q:"对于世俗眼中的“成功”（高薪、稳定、体面），你？",
+        opts:[
+            "成功不是必须，过得舒服才重要",
+            "就算达成世俗成功，也未必能得到长久幸福",
+            "这套成功标准只是社会强加的，不是真理",
+            "无数人追逐它，但它本身很虚无，可大家依旧在追逐"
+        ],
+        score:[0,1,2,3]
+    },
+    // ===== 细测20题，默认 荒诞主义(3) VS 理想主义(5)，代码自动计分 =====
+    {
+        q:"你坚持很久的信念，在现实里反复碰壁，很多人劝你妥协。",
+        opts:[
+            "我明白现实本就充满矛盾，接纳这份无奈，继续体验生活",
+            "信念本身是珍贵的，我不愿轻易向现实妥协",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你发现世界上永远存在无法消除的苦难。",
+        opts:[
+            "苦难是世界自带的矛盾，没有办法彻底根除，只能与之共存",
+            "即便苦难无法根除，我们依旧应该向往美好与正义",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"一件你认为美好的事，注定不会有圆满结局，你会？",
+        opts:[
+            "结局本就很难圆满，就算如此，过程的体验依然值得",
+            "哪怕结局不圆满，这件事本身的美好，依旧值得我坚持",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你看清很多人做事出发点都是利己。",
+        opts:[
+            "人性本就如此，世界本来就没有纯粹的美好，接纳这份现实",
+            "即便很多人利己，我依然相信真诚善意有存在的意义",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你努力去改善一件事，但你知道大概率不会带来根本改变。",
+        opts:[
+            "明知改变有限，依然可以去做，只是不期待完美结果",
+            "哪怕收效微小，这件事本身是对的，就值得坚持",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"看到理想被现实击碎，你的感受更接近：",
+        opts:[
+            "这就是生活固有的矛盾，世界本来就不会顺从人的期待",
+            "会觉得惋惜，但不会就此否定理想本身的价值",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"如果美好事物注定短暂，你会怎么看待？",
+        opts:[
+            "短暂就是事物本来的样子，体验过就足够，不必强求永恒",
+            "就算短暂，这份美好依旧珍贵，值得守护与珍惜",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"当你的善意换来伤害与背叛：",
+        opts:[
+            "世事充满这种无解的矛盾，接纳它，继续好好生活",
+            "不会因为这次伤害，就丢掉心中对善意的信仰",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你知道很多不公永远无法被纠正。",
+        opts:[
+            "世界自带不合理，不必强求万事公正，学会和荒诞共存",
+            "即便无法全部纠正，也不能默认不公是合理的",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你做一件事，没有任何人认可，也不会带来现实收益。",
+        opts:[
+            "单纯作为一种人生体验去做，不追求外界认可",
+            "因为这件事本身符合内心的道义，所以愿意去做",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"生活反复给你打击，看不到好转的迹象：",
+        opts:[
+            "生活本就充满无来由的磨难，我接纳矛盾继续往前走",
+            "就算低谷漫长，心底依然保留对美好的期待",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你发现完美世界永远不可能实现。",
+        opts:[
+            "完美本就是不存在的幻想，世界本来就是矛盾集合体",
+            "就算无法抵达完美，我们依旧可以向着美好靠近",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你付出善意，但对方完全不领情。",
+        opts:[
+            "人与人之间本就无法互通，这种矛盾是常态",
+            "我的善意本身有价值，不是必须要对方回馈",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"明知道某些努力本质改变不了大局：",
+        opts:[
+            "可以去做，但清楚这件事的局限，不抱有宏大期待",
+            "只要方向是对的，微小的行动也具备意义",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"幻想里美好的世界，永远只能存在想象之中：",
+        opts:[
+            "想象与现实割裂，正是世界荒诞的一部分，坦然接受",
+            "这份想象里的美好，可以当作我为人处世的标尺",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"你发现真诚在现实里经常吃亏。",
+        opts:[
+            "世界逻辑本就不是“善有善报”，接纳这种矛盾",
+            "吃亏也不代表真诚本身就是错误的",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"一件你很看重的事，最后彻底落空，没有补救办法：",
+        opts:[
+            "人生很多事没有解法，接受遗憾，继续体验往后的日子",
+            "虽然结果落空，但当初坚守的初心不会被否定",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"很多人明知世俗追逐的东西很空洞，依旧不停去争抢。",
+        opts:[
+            "这种矛盾，正是生活荒诞的体现，不必批判",
+            "我依然相信，存在比物质争夺更珍贵的东西",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"面对一个无法解决的悲剧：",
+        opts:[
+            "悲剧无法消解，我们只能带着它继续生活",
+            "悲剧让人难过，但更反衬出善良美好的可贵",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    },
+    {
+        q:"长期看不到正向反馈，你还会坚持内心选择吗？",
+        opts:[
+            "可以继续，但不期待回报，只是单纯体验这段过程",
+            "只要这件事本身是对的，没有反馈也愿意坚持",
+            "", ""
+        ],
+        score:[3,5,-1,-1]
+    }
+];
+
+let currentQ = 0;
+let answers = [];
+let scores = [0,0,0,0,0,0];
+
+function startTest(){
+    document.getElementById("page-home").classList.add("hidden");
+    document.getElementById("page-question").classList.remove("hidden");
+    renderQuestion();
+}
+
+function renderQuestion(){
+    const q = questions[currentQ];
+    document.getElementById("question-text").innerText = q.q;
+    document.getElementById("q-index").innerText = `第${currentQ+1}题 / 共30题`;
+    document.getElementById("stage-label").innerText = currentQ <10 ? "第一阶段 (๑>ᴗ<๑)" : "第二阶段 (≧∇≦)";
+    const wrap = document.getElementById("option-wrap");
+    const items = wrap.querySelectorAll(".option-item");
+    for(let i=0;i<4;i++){
+        items[i].innerText = q.opts[i];
+        items[i].classList.remove("selected");
+    }
+    //上一题按钮，第1题隐藏，第2题开始显示
+    const prevBtn = document.getElementById("prev-btn");
+    if(currentQ === 0){
+        prevBtn.classList.add("hidden");
+    }else{
+        prevBtn.classList.remove("hidden");
+    }
+    if(answers[currentQ] !== undefined){
+        const saved = answers[currentQ];
+        items[saved].classList.add("selected");
+    }
+}
+
+function selectOption(i){
+    const q = questions[currentQ];
+    answers[currentQ] = i;
+    const typeIdx = q.score[i];
+    if(typeIdx >=0) scores[typeIdx] += 3;
+
+    const items = document.querySelectorAll(".option-item");
+    items.forEach(el=>el.classList.remove("selected"));
+    items[i].classList.add("selected");
+
+    // 选完自动跳转下一题
+    currentQ++;
+    if(currentQ >= questions.length){
+        showResult();
+        return;
+    }
+    renderQuestion();
+}
+
+function prevQuestion(){
+    if(currentQ <=0) return;
+    currentQ--;
+    renderQuestion();
+}
+
+function showResult(){
+    document.getElementById("page-question").classList.add("hidden");
+    document.getElementById("page-result").classList.remove("hidden");
+    //排序
+    let arr = scores.map((v,i)=>({name:names[i],val:v,color:barColors[i]}));
+    arr.sort((a,b)=>b.val - a.val);
+    const top1 = arr[0], top2=arr[1], top3=arr[2];
+    const total = arr.reduce((s,i)=>s+i.val,0);
+    //绘制条形图
+    let barHtml = "";
+    arr.slice(0,3).forEach(item=>{
+        const pct = total>0 ? (item.val/total*100).toFixed(1) : 0;
+        barHtml += `
+        <div class="mb-3">
+            <div class="flex justify-between mb-1">
+                <span>${item.name}</span>
+                <span>${pct}%</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-5">
+                <div class="h-5 rounded-full" style="width:${pct}%;background:${item.color}"></div>
+            </div>
+        </div>
+        `;
+    })
+    document.getElementById("bar-container").innerHTML = barHtml;
+    //简短概述
+    document.getElementById("summary-text").innerText = `你的核心思维底色偏向${top1.name}，同时带有一部分${top2.name}的特质，${top3.name}只在少数场景偶尔浮现，你的思考方式大多由第一名的主义主导，遇到压力、独处抉择时第二名的特质才会悄悄出现 ヾ(≧▽≦*)o`;
+
+    // 报告文本，圆角马卡龙小标题框，字号大于正文
+    const color1 = top1.color;
+    const color2 = top2.color;
+    const color3 = top3.color;
+
+    let html = `
+    <h3 class="text-xl text-[#81A1C1] mb-3">${top1.name}</h3>
+    <span class="title-box" style="background:${color1}">人格解析</span>
+    <p>${descAll[top1.name].split("专属生活提升指南")[0]}</p>
+    <span class="title-box" style="background:${color1}">专属生活提升指南</span>
+    <p>${descAll[top1.name].split("专属生活提升指南")[1]}</p>
+    <p>这段特质构成了你思考世界最基础的框架，大多数日常选择都会遵循这套逻辑 🪐</p>
+    <hr class="my-6">
+    <h3 class="text-xl text-[#81A1C1] mb-3">${top2.name}</h3>
+    <span class="title-box" style="background:${color2}">人格解析</span>
+    <p>相较于第一主导倾向，你的${top2.name}倾向更浅、属于次要辅助人格，并非你的核心底色。这份特质不会主导你的人生决策，只会在特定情绪、压力场景、独处迷茫时显现，作为你人格的补充侧面。平时大多数时候，你都会以${top1.name}的思维优先行事，只有在疲惫、孤独、受挫时，这份辅助特质才会悄悄流露。它让你的人格不再单一极端，多了一份层次感和柔软度，中和了主导特质的极端性，让你为人处世更加温和、包容、立体。但因为倾向偏弱，不会成为你的主流性格，也不会长期影响你的生活状态。</p>
+    <span class="title-box" style="background:${color2}">专属生活提升指南</span>
+    <p>${descAll[top2.name].split("专属生活提升指南")[1]}</p>
+    <p>它更像是藏在性格里的小侧面，不会轻易左右你的大决定 ✨</p>
+    <hr class="my-6">
+    <h3 class="text-xl text-gray-600 mb-3">${top3.name}</h3>
+    <span class="title-box" style="background:${color3}">人格解析</span>
+    <p>该特质占比极低，属于隐性人格碎片，几乎不会影响你的日常思维与生活，仅作人格参考，无需重点关注。(・ω・)</p>
+    <span class="title-box" style="background:${color3}">专属生活提升指南</span>
+    <p>这个特质在你身上表现微弱，一般很难在你的选择和想法里体现，不必刻意关注。</p>
+    `;
+    document.getElementById("result-content").innerHTML = html;
+}
+</script>
+</body>
+</html>
